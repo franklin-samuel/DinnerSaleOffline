@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Caixa Jantinha</title>
+<style>
+  :root { --creme:#fff3dd; --laranja:#ff8a1f; --amarelo:#ffd23f; --logo:#df6d05; --tinta:#111; }
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 12px; background: var(--creme); color: var(--tinta); }
+  .display { font-family: "Arial Black", Impact, sans-serif; text-transform: uppercase; color: #fff;
+    -webkit-text-stroke: 2px var(--tinta); paint-order: stroke fill; text-shadow: 3px 3px 0 var(--tinta); letter-spacing: .5px; }
+  header { text-align: center; margin: 4px 0 14px; }
+  header h1 { margin: 0; font-size: clamp(36px, 7vw, 64px); color: var(--amarelo); -webkit-text-stroke: 3px var(--tinta); text-shadow: 5px 5px 0 var(--tinta); }
+  h2 { margin: 0 0 10px; font-size: 22px; }
+  .grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 16px; }
+  @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: #fff; border: 3px solid var(--tinta); border-radius: 14px; padding: 14px; box-shadow: 6px 6px 0 var(--tinta); margin-bottom: 16px; }
+  .card.laranja { background: var(--laranja); }
+  .card.amarelo { background: var(--amarelo); }
+  .produtos { display: grid; gap: 14px; margin-bottom: 18px; }
+  .produtos button { display: flex; align-items: center; gap: 12px; text-align: left; padding: 8px 16px 8px 8px; min-height: 104px;
+    border: 3px solid var(--tinta); border-radius: 14px; box-shadow: 6px 6px 0 var(--tinta); cursor: pointer; font: inherit; color: inherit;
+    transition: transform .08s, box-shadow .08s; }
+  .produtos button:nth-child(odd) { background: var(--laranja); }
+  .produtos button:nth-child(even) { background: var(--amarelo); }
+  .produtos button:active { transform: translate(4px, 4px); box-shadow: 2px 2px 0 var(--tinta); }
+  .produtos img { width: 120px; height: 88px; object-fit: contain; flex: none; }
+  .produtos .nome { flex: 1; font-size: clamp(20px, 2.6vw, 30px); line-height: 1.05; }
+  .produtos .desc { display: block; font-size: 12px; -webkit-text-stroke: 0; text-shadow: none; color: var(--tinta); margin-top: 4px; }
+  .produtos .preco { font-size: clamp(28px, 3.5vw, 44px); white-space: nowrap; }
+  .produtos .preco sup { font-size: 13px; -webkit-text-stroke: 1px var(--tinta); text-shadow: 1px 1px 0 var(--tinta); vertical-align: top; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  td, th { padding: 6px 4px; border-bottom: 1px solid #0002; text-align: left; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .total { font-size: 32px; margin: 10px 0; }
+  .troco { font-size: 24px; font-weight: 900; }
+  .troco.neg { color: #c00; }
+  input, select { font-size: 18px; padding: 8px; width: 100%; margin: 4px 0 8px; border: 2px solid var(--tinta); border-radius: 8px; background: #fff; }
+  .btn { font-size: 18px; font-weight: 900; padding: 12px; border: 3px solid var(--tinta); border-radius: 10px; cursor: pointer; width: 100%; margin-top: 8px;
+    box-shadow: 4px 4px 0 var(--tinta); text-transform: uppercase; }
+  .btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--tinta); }
+  .ok { background: var(--laranja); color: var(--tinta); }
+  .warn { background: #fff; }
+  .danger { background: #c62828; color: #fff; }
+  .mini { padding: 2px 10px; font-size: 16px; font-weight: 900; cursor: pointer; border: 2px solid var(--tinta); border-radius: 6px; background: #fff; }
+  .pag { display: flex; gap: 6px; }
+  .pag label { flex: 1; text-align: center; padding: 10px; border: 3px solid var(--tinta); border-radius: 10px; cursor: pointer; font-size: 17px; font-weight: 700; background: #fff; }
+  .pag input { display: none; }
+  .pag label:has(input:checked) { background: var(--tinta); color: var(--amarelo); }
+  .lista { max-height: 320px; overflow: auto; }
+  .cancelada { text-decoration: line-through; color: #777; }
+  footer { text-align: center; margin-top: 8px; }
+  footer img { background: var(--logo); padding: 6px 10px; border-radius: 8px 8px 0 0; height: 64px; }
+</style>
+</head>
+<body>
+<header><h1 class="display">Caixa</h1></header>
+<div class="grid">
+  <div>
+    <div class="produtos" id="produtos"></div>
+    <div class="card amarelo">
+      <h2 class="display">Pedido atual</h2>
+      <table id="pedido"></table>
+      <div class="total display">Total: <span id="totalPedido">R$ 0,00</span></div>
+      <div class="pag">
+        <label><input type="radio" name="pag" value="Dinheiro" checked> Dinheiro</label>
+        <label><input type="radio" name="pag" value="Pix"> Pix</label>
+        <label><input type="radio" name="pag" value="Cartão"> Cartão</label>
+      </div>
+      <div id="boxRecebido">
+        <label>Valor recebido (R$)
+          <input id="recebido" type="text" inputmode="decimal" placeholder="ex: 20">
+        </label>
+        <div>Troco: <span id="troco" class="troco">—</span></div>
+      </div>
+      <button class="btn ok" id="finalizar">✔ Finalizar venda</button>
+      <button class="btn warn" id="limparPedido">Limpar pedido</button>
+    </div>
+  </div>
+  <div>
+    <div class="card">
+      <h2 class="display">Resumo do caixa</h2>
+      <label>Fundo de troco inicial (R$)
+        <input id="fundo" type="text" inputmode="decimal" placeholder="0">
+      </label>
+      <table id="resumo"></table>
+      <button class="btn ok" id="exportar">⬇ Exportar CSV</button>
+      <button class="btn danger" id="zerar">Zerar caixa</button>
+    </div>
+    <div class="card">
+      <h2 class="display">Vendas (<span id="qtdVendas">0</span>)</h2>
+      <div class="lista"><table id="vendas"></table></div>
+    </div>
+  </div>
+</div>
+<footer><img src="img/logo.png" alt="INFOMAT"></footer>
+
+<script>
+// Preços em centavos para evitar erro de ponto flutuante.
+const PRODUTOS = [
+  { id: 'combo', nome: '“Jantinha”', desc: 'creme de frango + arroz + batata palha + refrigerante', img: ['prato', 'refri'], preco: 899 },
+  { id: 'janta', nome: 'Creme de frango', desc: 'acompanhado de arroz e batata palha', img: ['prato'], preco: 800 },
+  { id: 'refri', nome: 'Refrigerante', img: ['refri'], preco: 200 },
+  { id: 'agua',  nome: 'Água mineral', img: ['agua'], preco: 250 },
+];
+const $ = id => document.getElementById(id);
+const brl = c => 'R$ ' + (c / 100).toFixed(2).replace('.', ',');
+const parseBRL = s => Math.round(parseFloat(String(s).replace(/\./g, '').replace(',', '.') || '0') * 100) || 0;
+
+function load(key, def) {
+  try { return JSON.parse(localStorage.getItem(key)) ?? def; } catch { return def; }
+}
+function save() {
+  try {
+    localStorage.setItem('vendas', JSON.stringify(vendas));
+    localStorage.setItem('fundo', JSON.stringify($('fundo').value));
+  } catch (e) { alert('ERRO ao salvar! Exporte o CSV agora. ' + e); }
+}
+
+let vendas = load('vendas', []);
+let pedido = {}; // id -> qtd
+$('fundo').value = load('fundo', '');
+
+const pagamento = () => document.querySelector('input[name=pag]:checked').value;
+const totalPedido = () => PRODUTOS.reduce((s, p) => s + (pedido[p.id] || 0) * p.preco, 0);
+
+function renderProdutos() {
+  $('produtos').innerHTML = PRODUTOS.map(p =>
+    `<button data-add="${p.id}">
+      <span style="position:relative;flex:none">${p.img.map((n, i) => `<img src="img/${n}.png" alt=""${i ? ' style="position:absolute;right:-14px;bottom:0;width:60px;height:70px"' : ''}>`).join('')}</span>
+      <span class="nome display">${p.nome}${p.desc ? `<span class="desc">(${p.desc})</span>` : ''}</span>
+      <span class="preco display"><sup>R$</sup>${(p.preco / 100).toFixed(2).replace('.', ',')}</span>
+    </button>`).join('');
+}
+
+function renderPedido() {
+  const linhas = PRODUTOS.filter(p => pedido[p.id]).map(p => `<tr>
+    <td>${p.nome}</td>
+    <td class="num"><button class="mini" data-sub="${p.id}">−</button> ${pedido[p.id]} <button class="mini" data-add="${p.id}">+</button></td>
+    <td class="num">${brl(pedido[p.id] * p.preco)}</td></tr>`);
+  $('pedido').innerHTML = linhas.join('') || '<tr><td style="color:#999">Toque num produto para adicionar</td></tr>';
+  const total = totalPedido();
+  $('totalPedido').textContent = brl(total);
+  const din = pagamento() === 'Dinheiro';
+  $('boxRecebido').style.display = din ? '' : 'none';
+  const rec = parseBRL($('recebido').value);
+  const troco = rec - total;
+  $('troco').textContent = rec ? brl(troco) : '—';
+  $('troco').classList.toggle('neg', rec > 0 && troco < 0);
+}
+
+function renderResumo() {
+  const ativas = vendas.filter(v => !v.cancelada);
+  const total = ativas.reduce((s, v) => s + v.total, 0);
+  const porPag = {};
+  const porProd = {};
+  for (const v of ativas) {
+    porPag[v.pagamento] = (porPag[v.pagamento] || 0) + v.total;
+    for (const [id, q] of Object.entries(v.itens)) porProd[id] = (porProd[id] || 0) + q;
+  }
+  const fundo = parseBRL($('fundo').value);
+  const linhas = [
+    ...PRODUTOS.map(p => `<tr><td>${p.nome}</td><td class="num">${porProd[p.id] || 0} un</td><td class="num">${brl((porProd[p.id] || 0) * p.preco)}</td></tr>`),
+    ...['Dinheiro', 'Pix', 'Cartão'].map(k => `<tr><td colspan="2">${k}</td><td class="num">${brl(porPag[k] || 0)}</td></tr>`),
+    `<tr><th colspan="2">TOTAL VENDIDO</th><th class="num">${brl(total)}</th></tr>`,
+    `<tr><th colspan="2">Dinheiro esperado na gaveta (fundo + dinheiro)</th><th class="num">${brl(fundo + (porPag['Dinheiro'] || 0))}</th></tr>`,
+  ];
+  $('resumo').innerHTML = linhas.join('');
+  // auto-checagem: soma por produto tem que bater com o total
+  console.assert(PRODUTOS.reduce((s, p) => s + (porProd[p.id] || 0) * p.preco, 0) === total, 'Resumo não bate!');
+
+  $('qtdVendas').textContent = ativas.length;
+  $('vendas').innerHTML = vendas.slice().reverse().map(v => `<tr class="${v.cancelada ? 'cancelada' : ''}">
+    <td>#${v.id} ${new Date(v.hora).toLocaleTimeString('pt-BR').slice(0, 5)}</td>
+    <td>${PRODUTOS.filter(p => v.itens[p.id]).map(p => v.itens[p.id] + 'x ' + p.nome).join(', ')}<br><small>${v.pagamento}</small></td>
+    <td class="num">${brl(v.total)}</td>
+    <td>${v.cancelada ? '' : `<button class="mini" data-cancel="${v.id}">✕</button>`}</td></tr>`).join('');
+}
+
+function render() { renderPedido(); renderResumo(); }
+
+document.addEventListener('click', e => {
+  const t = e.target.closest('button');
+  if (!t) return;
+  if (t.dataset.add) { pedido[t.dataset.add] = (pedido[t.dataset.add] || 0) + 1; renderPedido(); }
+  if (t.dataset.sub) { if (--pedido[t.dataset.sub] <= 0) delete pedido[t.dataset.sub]; renderPedido(); }
+  if (t.dataset.cancel) {
+    const v = vendas.find(v => v.id == t.dataset.cancel);
+    if (confirm(`Cancelar venda #${v.id} de ${brl(v.total)}?`)) { v.cancelada = true; save(); renderResumo(); }
+  }
+});
+
+$('finalizar').onclick = () => {
+  const total = totalPedido();
+  if (!total) return alert('Pedido vazio.');
+  const rec = parseBRL($('recebido').value);
+  if (pagamento() === 'Dinheiro' && rec && rec < total) return alert('Valor recebido menor que o total.');
+  const id = (vendas.at(-1)?.id || 0) + 1;
+  vendas.push({ id, hora: new Date().toISOString(), itens: { ...pedido }, total, pagamento: pagamento() });
+  save();
+  pedido = {};
+  $('recebido').value = '';
+  render();
+};
+$('limparPedido').onclick = () => { pedido = {}; $('recebido').value = ''; renderPedido(); };
+$('recebido').oninput = renderPedido;
+document.querySelectorAll('input[name=pag]').forEach(r => r.onchange = renderPedido);
+$('fundo').oninput = () => { save(); renderResumo(); };
+
+function exportarCSV() {
+  const linhas = [['id', 'data_hora', ...PRODUTOS.map(p => p.nome), 'pagamento', 'total', 'cancelada']];
+  for (const v of vendas) linhas.push([v.id, new Date(v.hora).toLocaleString('pt-BR'),
+    ...PRODUTOS.map(p => v.itens[p.id] || 0), v.pagamento, (v.total / 100).toFixed(2).replace('.', ','), v.cancelada ? 'sim' : '']);
+  // ; e BOM para o Excel em pt-BR abrir certo
+  const csv = '﻿' + linhas.map(l => l.join(';')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.download = `vendas-jantinha-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}.csv`;
+  a.click();
+}
+$('exportar').onclick = exportarCSV;
+$('zerar').onclick = () => {
+  if (!confirm('Zerar o caixa? Um CSV será baixado antes.')) return;
+  if (!confirm('Tem certeza? Isso apaga todas as vendas deste navegador.')) return;
+  exportarCSV();
+  vendas = []; $('fundo').value = ''; save(); render();
+};
+
+renderProdutos();
+render();
+</script>
+</body>
+</html>
